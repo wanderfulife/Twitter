@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { sanityClient } from "../../sanity";
-import { Comment } from "../../typings";
+import { sanityClient } from "../../../sanity";
+import { Comment } from "../../../typings";
 import { groq } from "next-sanity";
 
 const commentQuery = groq`
