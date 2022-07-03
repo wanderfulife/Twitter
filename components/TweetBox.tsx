@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { Dispatch, SetStateAction, useRef, useState } from "react";
 import {
   CalendarIcon,
   EmojiHappyIcon,
@@ -7,8 +7,15 @@ import {
   SearchCircleIcon,
 } from "@heroicons/react/outline";
 import { useSession } from "next-auth/react";
+import { Tweet, TweetBody } from "../typings";
+import { fetchTweets } from "../utils/fetchTweets";
+import toast from "react-hot-toast";
 
-function TweetBox() {
+interface Props {
+  setTweets: Dispatch<SetStateAction<Tweet[]>>;
+}
+
+function TweetBox({ setTweets }: Props) {
   const [input, setInput] = useState<string>("");
   const [image, setImage] = useState<string>("");
 
@@ -29,11 +36,51 @@ function TweetBox() {
     setImageUrlBoxIsOpen(false);
   };
 
+  const postTweet = async () => {
+    const tweetInfo: TweetBody = {
+      text: input,
+      username: session?.user?.name || "unknown User",
+      profileImg:
+        session?.user?.image ||
+        "https://www.itdp.org/wp-content/uploads/2021/06/avatar-man-icon-profile-placeholder-260nw-1229859850-e1623694994111.jpg",
+      image: image,
+    };
+
+    const result = await fetch(`/api/auth/addTweet`, {
+      body: JSON.stringify(tweetInfo),
+      method: "POST",
+    });
+
+    const json = await result.json();
+
+    const newTweets = await fetchTweets();
+    setTweets(newTweets);
+
+    toast("Tweet Posted", {
+      icon: "🚀",
+    });
+    return json;
+  };
+
+  const handleSubmit = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    e.preventDefault();
+
+    postTweet();
+    console.log('tweet')
+
+    setInput('')
+    setImage('')
+    setImageUrlBoxIsOpen(false)
+  };
+
   return (
     <div className="flex space-x-2 p-5">
       <img
         className="h-14 w-14 rounded-full object- mt-4"
-        src={session?.user?.image || "https://links.papareact.com/gll"}
+        src={
+          session?.user?.image ||
+          "https://www.itdp.org/wp-content/uploads/2021/06/avatar-man-icon-profile-placeholder-260nw-1229859850-e1623694994111.jpg"
+        }
         alt=""
       />
       <div className="flex flex-1 items-center pl-2">
@@ -59,6 +106,7 @@ function TweetBox() {
               <LocationMarkerIcon className="h-5 w-5" />
             </div>
             <button
+              onClick={handleSubmit}
               disabled={!input || !session}
               className="bg-twitter rounded-full px-5 py-2 font-bold
 				text-white disabled:opacity-40"
@@ -82,6 +130,14 @@ function TweetBox() {
                 Add Image
               </button>
             </form>
+          )}
+
+          {image && (
+            <img
+              className="mt-10 h-40 w-full shadow-lg object-contain rounded-xl"
+              src={image}
+              alt=""
+            />
           )}
         </form>
       </div>
